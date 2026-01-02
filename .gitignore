@@ -1,0 +1,76 @@
+# General
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+env/
+venv/
+.venv/
+.Python
+pip-wheel-metadata/
+pip-log.txt
+*dist-info/
+.eggs/
+*.egg-info/
+build/
+develop-eggs/
+*.egg
+*.whl
+
+# Virtualenv and environment files
+.env
+.env.*
+
+# VSCode
+.vscode/
+
+# Pytest cache
+.pytest_cache/
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.yml
+
+# Flutter / Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.buildlog
+.idea/
+*.iml
+build/
+ios/Pods/
+
+# Android
+.gradle/
+local.properties
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+UserSettings/
+*.csproj
+*.unityproj
+*.sln
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pidb.meta
+*.userprefs
+
+# Logs
+*.log
+
+# Other
+*.swp
+*~

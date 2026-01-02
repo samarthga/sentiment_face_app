@@ -1,0 +1,46 @@
+name: sentiment_face_app
+description: Display internet sentiment as a photorealistic human face
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+
+  # Networking
+  dio: ^5.4.0
+  web_socket_channel: ^2.4.0
+
+  # Unity integration (for 3D face)
+  flutter_unity_widget: ^2022.2.1
+
+  # UI components
+  go_router: ^13.0.0
+  flutter_animate: ^4.3.0
+
+  # Utils
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.8
+  freezed: ^2.4.6
+  json_serializable: ^6.7.1
+  riverpod_generator: ^2.3.9
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
