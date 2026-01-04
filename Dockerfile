@@ -16,6 +16,9 @@ RUN curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/sta
 
 ENV PATH="/flutter/flutter/bin:$PATH"
 
+# Fix git ownership issue for Flutter
+RUN git config --global --add safe.directory /flutter/flutter
+
 # Build Flutter web app
 WORKDIR /app/flutter_app
 COPY flutter_app/ .
