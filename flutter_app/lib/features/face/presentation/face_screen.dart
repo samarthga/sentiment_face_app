@@ -61,9 +61,9 @@ class _FaceContent extends ConsumerWidget {
 
     return Column(
       children: [
-        // Header with emotion label
+        // Compact header with emotion label
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -73,14 +73,14 @@ class _FaceContent extends ConsumerWidget {
                   children: [
                     Text(
                       isSearching ? 'Topic: $searchQuery' : 'Internet Mood',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isSearching ? Theme.of(context).colorScheme.primary : Colors.grey,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       _getEmotionLabel(emotion.dominantEmotion),
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -92,37 +92,19 @@ class _FaceContent extends ConsumerWidget {
           ),
         ),
 
-        // Realistic Face
+        // Realistic Face - takes maximum space, fills completely
         Expanded(
-          flex: 3,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: RealisticFaceWidget(emotion: emotion),
-          ),
+          child: RealisticFaceWidget(emotion: emotion),
         ),
 
-        const SizedBox(height: 16),
-
-        // Emotion breakdown
-        Expanded(
-          flex: 1,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+        // Compact emotion breakdown at bottom
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: SizedBox(
+            height: 60,
             child: SourceBreakdown(emotion: emotion),
           ),
         ),
-
-        const SizedBox(height: 8),
       ],
     );
   }

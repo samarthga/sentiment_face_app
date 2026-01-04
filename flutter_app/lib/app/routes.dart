@@ -63,11 +63,6 @@ class MainShell extends StatelessWidget {
             label: 'Dashboard',
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'History',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
             label: 'Settings',
@@ -81,8 +76,7 @@ class MainShell extends StatelessWidget {
     final location = GoRouterState.of(context).uri.path;
     if (location == '/') return 0;
     if (location.startsWith('/dashboard')) return 1;
-    if (location.startsWith('/history')) return 2;
-    if (location.startsWith('/settings')) return 3;
+    if (location.startsWith('/settings')) return 2;
     return 0;
   }
 
@@ -95,9 +89,6 @@ class MainShell extends StatelessWidget {
         context.goNamed('dashboard');
         break;
       case 2:
-        context.goNamed('history');
-        break;
-      case 3:
         context.goNamed('settings');
         break;
     }

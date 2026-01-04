@@ -475,41 +475,32 @@ class _EmotionRow extends StatelessWidget {
     final color = _getEmotionColor(label);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Text(label),
-                    if (topics != null && topics!.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          '[${topics!.take(3).join(", ")}]',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: color,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Text('${(value * 100).toStringAsFixed(0)}%'),
-            ],
+          SizedBox(
+            width: 70,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 12),
+            ),
           ),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: value,
-            backgroundColor: Colors.grey.shade300,
-            valueColor: AlwaysStoppedAnimation(color),
+          Expanded(
+            child: LinearProgressIndicator(
+              value: value,
+              backgroundColor: Colors.grey.shade300,
+              valueColor: AlwaysStoppedAnimation(color),
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 35,
+            child: Text(
+              '${(value * 100).toStringAsFixed(0)}%',
+              style: const TextStyle(fontSize: 12),
+              textAlign: TextAlign.right,
+            ),
           ),
         ],
       ),

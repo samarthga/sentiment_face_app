@@ -99,43 +99,17 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
   Widget build(BuildContext context) {
     final imageAsync = ref.watch(faceImageProvider(widget.emotion));
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              _getEmotionColor(widget.emotion.dominantEmotion).withOpacity(0.3),
-              Colors.grey.shade900,
-            ],
-          ),
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Main face image or loading state
-            imageAsync.when(
-              data: (imageData) {
-                if (imageData != null) {
-                  return _buildFaceImage(imageData);
-                }
-                return _buildFallbackFace();
-              },
-              loading: () => _buildLoadingState(),
-              error: (e, _) => _buildFallbackFace(error: e.toString()),
-            ),
-
-            // Emotion overlay
-            Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
-              child: _EmotionOverlay(emotion: widget.emotion),
-            ),
-          ],
-        ),
+    return Container(
+      color: Colors.grey.shade900,
+      child: imageAsync.when(
+        data: (imageData) {
+          if (imageData != null) {
+            return _buildFaceImage(imageData);
+          }
+          return _buildFallbackFace();
+        },
+        loading: () => _buildLoadingState(),
+        error: (e, _) => _buildFallbackFace(error: e.toString()),
       ),
     );
   }
@@ -143,11 +117,13 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
   Widget _buildFaceImage(Uint8List imageData) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 500),
-      child: Image.memory(
-        imageData,
+      child: SizedBox.expand(
         key: ValueKey(imageData.hashCode),
-        fit: BoxFit.cover,
-        gaplessPlayback: true,
+        child: Image.memory(
+          imageData,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+        ),
       ),
     );
   }
