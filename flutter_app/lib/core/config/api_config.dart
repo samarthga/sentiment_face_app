@@ -1,9 +1,16 @@
 /// API configuration for external services.
 class ApiConfig {
   /// Google Gemini API key for image generation.
-  /// In production, use environment variables or secure storage.
-  static const String geminiApiKey = 'AIzaSyA6V8Gsr0OrIe1dNa5DRhtUjZrBCU2d94A';
+  /// Loaded from environment variable at build time.
+  static const String geminiApiKey = String.fromEnvironment(
+    'GEMINI_API_KEY',
+    defaultValue: '',
+  );
 
   /// Backend API base URL.
-  static const String backendBaseUrl = 'http://localhost:8000';
+  /// In production (web release), use relative URLs for same-origin.
+  static const String backendBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:8000',
+  );
 }

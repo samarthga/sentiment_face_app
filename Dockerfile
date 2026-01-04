@@ -1,6 +1,9 @@
 # Build stage for Flutter web
 FROM debian:bookworm-slim AS flutter-build
 
+# Build argument for Gemini API key
+ARG GEMINI_API_KEY
+
 RUN apt-get update && apt-get install -y \
     curl \
     git \
@@ -22,7 +25,8 @@ RUN git config --global --add safe.directory /flutter/flutter
 # Build Flutter web app
 WORKDIR /app/flutter_app
 COPY flutter_app/ .
-RUN flutter pub get && flutter build web --release --web-renderer html
+RUN flutter pub get && flutter build web --release --web-renderer html \
+    --dart-define=GEMINI_API_KEY=${GEMINI_API_KEY}
 
 # Production stage
 FROM python:3.11.7-slim
@@ -39,8 +43,8 @@ COPY backend/ .
 # Copy Flutter build from previous stage
 COPY --from=flutter-build /app/flutter_app/build/web /app/static
 
-# Expose port
+# Expose port (Render provides PORT env var)
 EXPOSE 10000
 
-# Start the server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
+# Start the server using shell form to expand $PORT
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}

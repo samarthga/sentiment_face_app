@@ -4,9 +4,15 @@ services:
     runtime: docker
     region: oregon
     plan: free
+    dockerCommand: ""
     envVars:
       - key: DEBUG
         value: "false"
       - key: CORS_ORIGINS
         value: '["*"]'
+      - key: GEMINI_API_KEY
+        sync: false  # Set this manually in Render dashboard as a secret
+    buildArgs:
+      - key: GEMINI_API_KEY
+        value: ""  # Will be overridden by secret in Render dashboard
     healthCheckPath: /health
