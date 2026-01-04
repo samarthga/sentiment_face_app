@@ -25,6 +25,10 @@ RUN git config --global --add safe.directory /flutter/flutter
 # Build Flutter web app
 WORKDIR /app/flutter_app
 COPY flutter_app/ .
+
+# Create empty local_secrets.dart for production build (actual key passed via --dart-define)
+RUN echo "class LocalSecrets { static const String geminiApiKey = ''; }" > lib/core/config/local_secrets.dart
+
 RUN flutter pub get && flutter build web --release --web-renderer html \
     --dart-define=GEMINI_API_KEY=${GEMINI_API_KEY}
 
