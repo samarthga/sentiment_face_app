@@ -107,7 +107,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              _getEmotionColor(widget.emotion.dominantEmotion).withValues(alpha: 0.3),
+              _getEmotionColor(widget.emotion.dominantEmotion).withOpacity(0.3),
               Colors.grey.shade900,
             ],
           ),
@@ -166,7 +166,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
                   center: Alignment.center,
                   radius: 0.8 + (_pulseController.value * 0.2),
                   colors: [
-                    _getEmotionColor(widget.emotion.dominantEmotion).withValues(alpha: 0.3),
+                    _getEmotionColor(widget.emotion.dominantEmotion).withOpacity(0.3),
                     Colors.grey.shade800,
                   ],
                 ),
@@ -189,7 +189,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
                     child: Icon(
                       Icons.face,
                       size: 120,
-                      color: Colors.white.withValues(alpha: 0.3 + (_pulseController.value * 0.2)),
+                      color: Colors.white.withOpacity(0.3 + (_pulseController.value * 0.2)),
                     ),
                   );
                 },
@@ -254,7 +254,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.shade900.withValues(alpha: 0.8),
+                color: Colors.red.shade900.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -314,7 +314,7 @@ class _EmotionOverlay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
+        color: Colors.black.withOpacity(0.6),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

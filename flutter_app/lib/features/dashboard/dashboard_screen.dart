@@ -358,7 +358,7 @@ class _SearchIndicator extends StatelessWidget {
                       'Found ${result.count} articles • Auto-refreshing every 30s',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                        color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8),
                       ),
                     ),
                   );
@@ -412,7 +412,7 @@ class _StatCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
+                color: color.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 32),

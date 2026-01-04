@@ -252,9 +252,9 @@ class HistoryScreen extends ConsumerWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: emotionColor.withValues(alpha: 0.3)),
+        border: Border.all(color: emotionColor.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +265,7 @@ class HistoryScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: emotionColor.withValues(alpha: 0.2),
+                  color: emotionColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: emotionColor),
                 ),
@@ -320,7 +320,7 @@ class HistoryScreen extends ConsumerWidget {
                   drawVerticalLine: false,
                   horizontalInterval: 0.2,
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: Colors.grey.withValues(alpha: 0.2),
+                    color: Colors.grey.withOpacity(0.2),
                     strokeWidth: 1,
                   ),
                 ),
@@ -387,7 +387,7 @@ class HistoryScreen extends ConsumerWidget {
                     ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: emotionColor.withValues(alpha: 0.2),
+                      color: emotionColor.withOpacity(0.2),
                     ),
                   ),
                 ],
@@ -495,9 +495,9 @@ class HistoryScreen extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: emotionColor.withValues(alpha: 0.05),
+        color: emotionColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: emotionColor.withValues(alpha: 0.3)),
+        border: Border.all(color: emotionColor.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -524,7 +524,7 @@ class HistoryScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: emotionColor.withValues(alpha: 0.2),
+                  color: emotionColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -567,7 +567,7 @@ class HistoryScreen extends ConsumerWidget {
                     dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: emotionColor.withValues(alpha: 0.2),
+                      color: emotionColor.withOpacity(0.2),
                     ),
                   ),
                 ],
@@ -625,7 +625,7 @@ class HistoryScreen extends ConsumerWidget {
                 fontWeight: isSelected ? FontWeight.bold : null,
               ),
             ),
-            backgroundColor: isSelected ? emotionColor : emotionColor.withValues(alpha: 0.1),
+            backgroundColor: isSelected ? emotionColor : emotionColor.withOpacity(0.1),
             side: BorderSide(color: emotionColor, width: isSelected ? 2 : 1),
             onPressed: () {
               if (isSelected) {
@@ -725,7 +725,7 @@ class HistoryScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getEmotionColor(entry.dominantEmotion).withValues(alpha: 0.2),
+                    color: _getEmotionColor(entry.dominantEmotion).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -818,7 +818,7 @@ class HistoryScreen extends ConsumerWidget {
                 const SizedBox(height: 2),
                 LinearProgressIndicator(
                   value: e.value,
-                  backgroundColor: color.withValues(alpha: 0.2),
+                  backgroundColor: color.withOpacity(0.2),
                   valueColor: AlwaysStoppedAnimation(color),
                   minHeight: 4,
                 ),
