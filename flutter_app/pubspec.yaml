@@ -18,12 +18,10 @@ dependencies:
   dio: ^5.4.0
   web_socket_channel: ^2.4.0
 
-  # Unity integration (for 3D face)
-  flutter_unity_widget: ^2022.2.1
-
   # UI components
   go_router: ^13.0.0
   flutter_animate: ^4.3.0
+  fl_chart: ^0.66.0
 
   # Utils
   freezed_annotation: ^2.4.1
@@ -44,3 +42,4 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/faces/

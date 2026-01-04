@@ -43,7 +43,7 @@ class EmotionState with _$EmotionState {
 
   const EmotionState._();
 
-  /// Returns the dominant emotion name
+  /// Returns the dominant emotion name (basic emotions only)
   String get dominantEmotion {
     final emotions = {
       'happiness': happiness,
@@ -52,11 +52,6 @@ class EmotionState with _$EmotionState {
       'fear': fear,
       'surprise': surprise,
       'disgust': disgust,
-      'confusion': confusion,
-      'pride': pride,
-      'loneliness': loneliness,
-      'pain': pain,
-      'contempt': contempt,
     };
 
     final sorted = emotions.entries.toList()
@@ -65,11 +60,10 @@ class EmotionState with _$EmotionState {
     return sorted.first.key;
   }
 
-  /// Returns the intensity of the dominant emotion
+  /// Returns the intensity of the dominant emotion (basic emotions only)
   double get dominantIntensity {
     final emotions = [
       happiness, sadness, anger, fear, surprise, disgust,
-      confusion, pride, loneliness, pain, contempt,
     ];
     return emotions.reduce((a, b) => a > b ? a : b);
   }

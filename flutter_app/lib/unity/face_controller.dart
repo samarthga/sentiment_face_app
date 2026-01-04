@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import '../features/face/domain/emotion_state.dart';
 import '../features/face/domain/emotion_mapper.dart';
+
+// Conditional import for web
+import 'threejs_face_stub.dart' if (dart.library.html) 'threejs_face_web.dart';
 
 // Note: In production, uncomment flutter_unity_widget import
 // import 'package:flutter_unity_widget/flutter_unity_widget.dart';
@@ -81,7 +85,12 @@ class _UnityFaceWidgetState extends State<UnityFaceWidget>
 
   @override
   Widget build(BuildContext context) {
-    // Placeholder UI until Unity is integrated
+    // Use Three.js on web, placeholder on other platforms
+    if (kIsWeb) {
+      return ThreeJsFaceWidget(emotion: widget.emotion);
+    }
+
+    // Placeholder UI until Unity is integrated for mobile
     // Replace with actual UnityWidget in production:
     //
     // return UnityWidget(

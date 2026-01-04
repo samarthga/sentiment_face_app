@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/sentiment_repository.dart';
 import '../domain/emotion_state.dart';
-import '../../../unity/face_controller.dart';
+import 'widgets/realistic_face.dart';
 import 'widgets/emotion_indicator.dart';
 import 'widgets/source_breakdown.dart';
 
@@ -11,7 +11,8 @@ class FaceScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final emotionAsync = ref.watch(emotionStateProvider);
+    // Use effective emotion which reflects search results when searching
+    final emotionAsync = ref.watch(effectiveEmotionProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -48,13 +49,16 @@ class FaceScreen extends ConsumerWidget {
   }
 }
 
-class _FaceContent extends StatelessWidget {
+class _FaceContent extends ConsumerWidget {
   final EmotionState emotion;
 
   const _FaceContent({required this.emotion});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final searchQuery = ref.watch(globalSearchQueryProvider);
+    final isSearching = searchQuery != null && searchQuery.isNotEmpty;
+
     return Column(
       children: [
         // Header with emotion label
@@ -63,41 +67,47 @@ class _FaceContent extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Internet Mood',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.grey,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isSearching ? 'Topic: $searchQuery' : 'Internet Mood',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: isSearching ? Theme.of(context).colorScheme.primary : Colors.grey,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  Text(
-                    _getEmotionLabel(emotion.dominantEmotion),
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    Text(
+                      _getEmotionLabel(emotion.dominantEmotion),
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               EmotionIndicator(emotion: emotion),
             ],
           ),
         ),
 
-        // 3D Face (Unity widget)
+        // Realistic Face
         Expanded(
           flex: 3,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
-              color: Colors.black26,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: UnityFaceWidget(emotion: emotion),
-            ),
+            child: RealisticFaceWidget(emotion: emotion),
           ),
         ),
 

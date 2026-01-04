@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provides the API client singleton.
@@ -10,9 +11,35 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 class ApiClient {
   late final Dio _dio;
 
-  // TODO: Move to environment config
-  static const String _baseUrl = 'http://localhost:8000';
-  static const String _wsBaseUrl = 'ws://localhost:8000';
+  // Production URL from environment, fallback to localhost for development
+  static const String _prodApiUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: '',
+  );
+
+  static String get _baseUrl {
+    // If production URL is set via environment, use it
+    if (_prodApiUrl.isNotEmpty) {
+      return _prodApiUrl;
+    }
+    // In release mode on web, use relative URLs (same origin)
+    if (kIsWeb && kReleaseMode) {
+      return '';  // Use relative URLs for same-origin backend
+    }
+    // Development fallback
+    return 'http://localhost:8000';
+  }
+
+  static String get _wsBaseUrl {
+    if (_prodApiUrl.isNotEmpty) {
+      // Convert https to wss, http to ws
+      return _prodApiUrl.replaceFirst('https://', 'wss://').replaceFirst('http://', 'ws://');
+    }
+    if (kIsWeb && kReleaseMode) {
+      return '';  // Will be constructed from window.location in WebSocket code
+    }
+    return 'ws://localhost:8000';
+  }
 
   String get baseUrl => _baseUrl;
   String get wsBaseUrl => _wsBaseUrl;
@@ -61,10 +88,12 @@ class ApiClient {
   Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic>? body,
+    Map<String, String>? queryParams,
   }) async {
     final response = await _dio.post(
       path,
       data: body,
+      queryParameters: queryParams,
     );
     return response.data as Map<String, dynamic>;
   }
