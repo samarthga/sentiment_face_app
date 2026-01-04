@@ -24,6 +24,7 @@ class Settings(BaseSettings):
 
     # Scraping settings
     scrape_interval_minutes: int = 5
+    scrape_interval_seconds: int = 30  # Takes priority over minutes if set
     max_posts_per_source: int = 100
 
     # Sentiment analysis

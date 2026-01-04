@@ -1,7 +1,7 @@
 """Aggregates sentiment from multiple sources into a unified emotion state."""
 import logging
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from app.models.emotion import EmotionState
 from app.services.sentiment_analyzer import SentimentAnalyzer, AnalysisResult
@@ -9,6 +9,7 @@ from app.services.scrapers.base_scraper import ScrapedContent
 from app.services.scrapers.reddit_scraper import RedditScraper
 from app.services.scrapers.hackernews_scraper import HackerNewsScraper
 from app.services.scrapers.rss_scraper import RSSScraper
+from app.services.history_store import history_store, topic_extractor
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +48,43 @@ class EmotionAggregator:
         texts = [c.text for c in all_content]
         results = self.analyzer.analyze_batch(texts)
 
+        # Extract topics from content
+        content_dicts = [{"title": c.title, "text": c.text} for c in all_content]
+        result_dicts = [{"sentiment_score": r.sentiment_score} for r in results]
+        topics = topic_extractor.extract_topics(content_dicts, result_dicts, limit=10)
+
         # Aggregate results
-        return self._aggregate_results(all_content, results, source_content)
+        emotion_state = self._aggregate_results(all_content, results, source_content)
+
+        # Store in history
+        sources_summary = {source: len(items) for source, items in source_content.items()}
+        history_store.add_entry(
+            emotion_state={
+                "happiness": emotion_state.happiness,
+                "sadness": emotion_state.sadness,
+                "anger": emotion_state.anger,
+                "fear": emotion_state.fear,
+                "surprise": emotion_state.surprise,
+                "disgust": emotion_state.disgust,
+                "confusion": emotion_state.confusion,
+                "pride": emotion_state.pride,
+                "loneliness": emotion_state.loneliness,
+                "pain": emotion_state.pain,
+                "overall_sentiment": emotion_state.overall_sentiment,
+                "intensity": emotion_state.intensity,
+            },
+            topics=topics,
+            sources_summary=sources_summary,
+        )
+
+        # Store topics on the emotion state for API access
+        self._last_topics = topics
+
+        return emotion_state
+
+    def get_last_topics(self) -> List[Dict]:
+        """Get topics from the last aggregation."""
+        return getattr(self, '_last_topics', [])
 
     def _aggregate_results(
         self,

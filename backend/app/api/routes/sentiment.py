@@ -1,12 +1,13 @@
 """Sentiment API endpoints."""
 import asyncio
 import json
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional, Dict
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 
 from app.models.emotion import EmotionState, SourceSentiment
 from app.services.emotion_aggregator import EmotionAggregator
+from app.services.history_store import history_store
 
 router = APIRouter()
 
@@ -88,15 +89,52 @@ async def get_sentiment_history(
     to_date: Optional[datetime] = Query(None, alias="to"),
     limit: int = Query(100, ge=1, le=1000),
 ):
-    """Get historical sentiment data."""
-    # TODO: Implement database query
-    # For now, return mock data
-    current = get_current_emotion()
+    """Get historical sentiment data with topics."""
+    # Default to last 24 hours if no date specified
+    if from_date is None:
+        from_date = datetime.utcnow() - timedelta(hours=24)
+
+    history = history_store.get_history(
+        from_date=from_date,
+        to_date=to_date,
+        limit=limit
+    )
+
     return {
-        "data": [current.model_dump(by_alias=True)],
-        "count": 1,
-        "from": from_date,
-        "to": to_date,
+        "data": history,
+        "count": len(history),
+        "from": from_date.isoformat() if from_date else None,
+        "to": to_date.isoformat() if to_date else None,
+    }
+
+
+@router.get("/topics")
+async def get_trending_topics(
+    hours: int = Query(1, ge=1, le=24),
+    limit: int = Query(10, ge=1, le=50),
+):
+    """Get trending topics from recent sentiment analysis."""
+    topics = history_store.get_trending_topics(hours=hours, limit=limit)
+    return {
+        "topics": topics,
+        "hours": hours,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@router.get("/current/detailed")
+async def get_current_sentiment_detailed():
+    """Get current emotion state with topics."""
+    emotion = get_current_emotion()
+
+    # Get recent topics from history
+    recent_history = history_store.get_history(limit=1)
+    topics = recent_history[0].get("topics", []) if recent_history else []
+
+    return {
+        "emotion": emotion.model_dump(by_alias=True),
+        "topics": topics,
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -168,3 +206,100 @@ async def refresh_sentiment():
     emotion = await aggregator.aggregate_all()
     update_current_emotion(emotion)
     return {"status": "refreshed", "emotion": emotion.model_dump(by_alias=True)}
+
+
+# Store for active search topic
+_active_search_topic: Optional[str] = None
+
+
+def get_active_search_topic() -> Optional[str]:
+    """Get the currently active search topic."""
+    return _active_search_topic
+
+
+def set_active_search_topic(topic: Optional[str]):
+    """Set the active search topic."""
+    global _active_search_topic
+    _active_search_topic = topic
+
+
+@router.post("/search")
+async def search_topic(query: str = Query(..., min_length=2, max_length=100)):
+    """Search and analyze sentiment for a specific topic."""
+    from app.services.topic_searcher import TopicSearcher
+
+    set_active_search_topic(query.lower())
+
+    searcher = TopicSearcher()
+    result = await searcher.search_topic(query)
+
+    # Update current emotion with search results
+    if result.get("emotion"):
+        emotion = EmotionState(**result["emotion"])
+        update_current_emotion(emotion)
+
+    return result
+
+
+@router.delete("/search")
+async def clear_search():
+    """Clear the active search topic."""
+    set_active_search_topic(None)
+    return {"status": "cleared"}
+
+
+@router.get("/search/status")
+async def get_search_status():
+    """Get the current search status."""
+    return {
+        "active": _active_search_topic is not None,
+        "topic": _active_search_topic,
+    }
+
+
+@router.get("/emotion-topics")
+async def get_emotion_topics():
+    """Get topics associated with each emotion from recent history."""
+    # Get recent history entries
+    recent = history_store.get_history(limit=50)
+
+    # Map emotions to their associated topics with weighted scores
+    emotion_topics: Dict[str, Dict[str, float]] = {
+        "happiness": {},
+        "sadness": {},
+        "anger": {},
+        "fear": {},
+        "surprise": {},
+        "disgust": {},
+        "confusion": {},
+        "pride": {},
+        "loneliness": {},
+        "pain": {},
+    }
+
+    # Threshold for considering an emotion "active" for a topic (lowered to catch more associations)
+    EMOTION_THRESHOLD = 0.01
+
+    for entry in recent:
+        emotions = entry.get("emotions", {})
+        topics = entry.get("topics", [])
+
+        for topic_data in topics:
+            topic_name = topic_data.get("topic", "")
+            if not topic_name:
+                continue
+
+            # Associate topic with ALL emotions that are elevated
+            for emotion_name, emotion_value in emotions.items():
+                if emotion_name in emotion_topics and emotion_value >= EMOTION_THRESHOLD:
+                    # Weight by emotion intensity
+                    current = emotion_topics[emotion_name].get(topic_name, 0)
+                    emotion_topics[emotion_name][topic_name] = current + emotion_value
+
+    # Convert to sorted lists (top 5 topics per emotion)
+    result = {}
+    for emotion, topics in emotion_topics.items():
+        sorted_topics = sorted(topics.items(), key=lambda x: x[1], reverse=True)[:5]
+        result[emotion] = [t[0] for t in sorted_topics]
+
+    return result
