@@ -25,12 +25,7 @@ final globalSearchResultProvider = FutureProvider.autoDispose<SearchResult?>((re
   if (query == null || query.isEmpty) return null;
 
   final repository = ref.watch(sentimentRepositoryProvider);
-  final result = await repository.searchTopic(query);
-
-  // Refresh emotion state after search completes
-  ref.invalidate(emotionStateProvider);
-
-  return result;
+  return repository.searchTopic(query);
 });
 
 /// Combined emotion state that uses search results when searching.

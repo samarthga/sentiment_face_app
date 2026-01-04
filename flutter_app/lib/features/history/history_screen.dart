@@ -54,12 +54,10 @@ class HistoryScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.clear),
               tooltip: 'Clear search',
-              onPressed: () async {
+              onPressed: () {
                 ref.read(globalSearchQueryProvider.notifier).state = null;
-                // Clear on backend too
-                final repository = ref.read(sentimentRepositoryProvider);
-                await repository.clearSearch();
-                ref.invalidate(emotionStateProvider);
+                // Clear on backend too (fire and forget)
+                ref.read(sentimentRepositoryProvider).clearSearch();
               },
             ),
           IconButton(
@@ -249,6 +247,7 @@ class HistoryScreen extends ConsumerWidget {
     final emotionColor = _getEmotionColor(dominantEmotion);
 
     return Container(
+      key: ValueKey('main_trend_$topic'),
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -492,6 +491,7 @@ class HistoryScreen extends ConsumerWidget {
     }
 
     return Container(
+      key: ValueKey('trend_${topic.topic}'),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -606,6 +606,7 @@ class HistoryScreen extends ConsumerWidget {
               : color;
 
           return ActionChip(
+            key: ValueKey('topic_${topic.topic}'),
             avatar: CircleAvatar(
               backgroundColor: isSelected ? Colors.white : emotionColor,
               radius: 12,
@@ -702,17 +703,27 @@ class HistoryScreen extends ConsumerWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: filteredEntries.length,
-      itemBuilder: (context, index) => _buildHistoryCard(context, ref, filteredEntries[index], selectedTopic),
+      itemBuilder: (context, index) {
+        final entry = filteredEntries[index];
+        return _buildHistoryCard(
+          context,
+          ref,
+          entry,
+          selectedTopic,
+          key: ValueKey('history_card_${entry.timestamp.millisecondsSinceEpoch}'),
+        );
+      },
     );
   }
 
-  Widget _buildHistoryCard(BuildContext context, WidgetRef ref, HistoryEntry entry, String? selectedTopic) {
+  Widget _buildHistoryCard(BuildContext context, WidgetRef ref, HistoryEntry entry, String? selectedTopic, {Key? key}) {
     final timeFormat = DateFormat('HH:mm');
     final dateFormat = DateFormat('MMM d');
     final sentiment = entry.overallSentiment;
     final color = _getSentimentColor(sentiment);
 
     return Card(
+      key: key,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -762,6 +773,7 @@ class HistoryScreen extends ConsumerWidget {
                   final topicColor = _getSentimentColor(topic.sentiment);
 
                   return GestureDetector(
+                    key: ValueKey('history_topic_${entry.timestamp.millisecondsSinceEpoch}_${topic.topic}'),
                     onTap: () {
                       ref.read(globalSearchQueryProvider.notifier).state = topic.topic;
                     },

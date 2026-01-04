@@ -28,11 +28,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   void _startSearchPolling(String query) {
     _searchTimer?.cancel();
-    _searchTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+    _searchTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!mounted) return;
       final searchQuery = ref.read(globalSearchQueryProvider);
       if (searchQuery != null && searchQuery.isNotEmpty) {
         ref.invalidate(globalSearchResultProvider);
-        ref.invalidate(emotionStateProvider);
       }
     });
   }
@@ -94,16 +94,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.invalidate(emotionTopicsProvider);
   }
 
-  void _clearSearch() async {
+  void _clearSearch() {
     _stopSearchPolling();
     ref.read(globalSearchQueryProvider.notifier).state = null;
 
-    // Clear on backend too
-    final repository = ref.read(sentimentRepositoryProvider);
-    await repository.clearSearch();
+    // Clear on backend too (fire and forget)
+    ref.read(sentimentRepositoryProvider).clearSearch();
 
-    // Refresh normal data
-    ref.invalidate(emotionStateProvider);
+    // Refresh topics
     ref.invalidate(emotionTopicsProvider);
   }
 
