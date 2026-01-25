@@ -9,6 +9,8 @@ from app.services.scrapers.base_scraper import ScrapedContent
 from app.services.scrapers.reddit_scraper import RedditScraper
 from app.services.scrapers.hackernews_scraper import HackerNewsScraper
 from app.services.scrapers.rss_scraper import RSSScraper
+from app.services.scrapers.bluesky_scraper import BlueskyScraper
+from app.services.scrapers.truthsocial_scraper import TruthSocialScraper
 from app.services.history_store import history_store, topic_extractor
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,8 @@ class EmotionAggregator:
             RedditScraper(),
             HackerNewsScraper(),
             RSSScraper(),
+            BlueskyScraper(),
+            TruthSocialScraper(),
         ]
 
     async def aggregate_all(self) -> EmotionState:
