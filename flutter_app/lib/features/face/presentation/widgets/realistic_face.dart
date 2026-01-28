@@ -110,7 +110,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: emotionColor.withValues(alpha: 0.25),
+              color: emotionColor.withOpacity( 0.25),
               blurRadius: 40,
               spreadRadius: 2,
               offset: const Offset(0, 8),
@@ -169,7 +169,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
               center: Alignment.center,
               radius: 0.9 + (_pulseController.value * 0.15),
               colors: [
-                emotionColor.withValues(alpha: 0.15),
+                emotionColor.withOpacity( 0.15),
                 Colors.grey.shade900,
               ],
             ),
@@ -183,7 +183,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
                   child: Icon(
                     Icons.face,
                     size: 72,
-                    color: emotionColor.withValues(alpha: 0.4 + (_pulseController.value * 0.15)),
+                    color: emotionColor.withOpacity( 0.4 + (_pulseController.value * 0.15)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -193,7 +193,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
                     borderRadius: BorderRadius.circular(3),
                     child: LinearProgressIndicator(
                       backgroundColor: Colors.white10,
-                      valueColor: AlwaysStoppedAnimation(emotionColor.withValues(alpha: 0.6)),
+                      valueColor: AlwaysStoppedAnimation(emotionColor.withOpacity( 0.6)),
                       minHeight: 3,
                     ),
                   ),
@@ -202,7 +202,7 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
                 Text(
                   'Generating...',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: Colors.white.withOpacity( 0.4),
                     fontSize: 13,
                     letterSpacing: 0.5,
                   ),

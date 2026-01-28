@@ -65,7 +65,7 @@ class _FaceContent extends ConsumerWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            emotionColor.withValues(alpha: 0.08),
+            emotionColor.withOpacity( 0.08),
             Colors.black,
           ],
           stops: const [0.0, 0.4],
