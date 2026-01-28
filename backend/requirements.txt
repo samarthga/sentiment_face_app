@@ -23,7 +23,7 @@ apscheduler==3.10.4
 # Utils
 pydantic==2.5.3
 pydantic-settings==2.1.0
-python-dotenv==1.0.0
+python-dotenv>=1.0.1
 
 # RSS parsing
 feedparser==6.0.11
