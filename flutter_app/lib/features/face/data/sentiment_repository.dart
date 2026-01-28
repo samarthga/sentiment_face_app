@@ -1,19 +1,86 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 import '../domain/emotion_state.dart';
+import '../domain/source_emotion_state.dart';
 import '../../../core/api/api_client.dart';
 
+/// Information about a data source.
+class SourceInfo {
+  final String id;
+  final String name;
+  final IconData icon;
+  final Color color;
+
+  const SourceInfo({
+    required this.id,
+    required this.name,
+    required this.icon,
+    required this.color,
+  });
+}
+
+/// Available data sources with metadata.
+final availableSourcesProvider = Provider<List<SourceInfo>>((ref) => const [
+  SourceInfo(
+    id: 'reddit',
+    name: 'Reddit',
+    icon: Icons.forum,
+    color: Color(0xFFFF4500),
+  ),
+  SourceInfo(
+    id: 'hackernews',
+    name: 'HackerNews',
+    icon: Icons.computer,
+    color: Color(0xFFFF6600),
+  ),
+  SourceInfo(
+    id: 'rss',
+    name: 'RSS Feeds',
+    icon: Icons.rss_feed,
+    color: Color(0xFFEE802F),
+  ),
+  SourceInfo(
+    id: 'bluesky',
+    name: 'Bluesky',
+    icon: Icons.cloud,
+    color: Color(0xFF0085FF),
+  ),
+  SourceInfo(
+    id: 'truthsocial',
+    name: 'Truth Social',
+    icon: Icons.verified,
+    color: Color(0xFF5448EE),
+  ),
+]);
+
+/// Currently selected sources (all enabled by default).
+final selectedSourcesProvider = StateProvider<Set<String>>((ref) {
+  final available = ref.watch(availableSourcesProvider);
+  return available.map((s) => s.id).toSet();
+});
+
 /// Provides the current emotion state from the backend.
+/// This provider watches selectedSourcesProvider and invalidates when sources change.
 final emotionStateProvider = StateNotifierProvider<EmotionStateNotifier, AsyncValue<EmotionState>>((ref) {
   final repository = ref.watch(sentimentRepositoryProvider);
-  return EmotionStateNotifier(repository);
+  // Watch selectedSources - provider will be recreated when sources change
+  final selectedSources = ref.watch(selectedSourcesProvider);
+  return EmotionStateNotifier(repository, selectedSources.toList());
 });
 
 /// Provides the sentiment repository.
 final sentimentRepositoryProvider = Provider<SentimentRepository>((ref) {
   return SentimentRepository(ref.watch(apiClientProvider));
+});
+
+/// Provider for per-source emotions with topic information.
+final sourceEmotionsProvider = FutureProvider.autoDispose<List<SourceEmotionState>>((ref) async {
+  final repository = ref.watch(sentimentRepositoryProvider);
+  final selectedSources = ref.watch(selectedSourcesProvider);
+  return repository.getSourceEmotions(sources: selectedSources.toList());
 });
 
 /// Global search query state - shared across all pages.
@@ -72,44 +139,39 @@ class EmotionStateNotifier extends StateNotifier<AsyncValue<EmotionState>> {
   final SentimentRepository _repository;
   StreamSubscription<EmotionState>? _subscription;
   Timer? _pollingTimer;
+  List<String> _currentSources;
 
-  EmotionStateNotifier(this._repository) : super(const AsyncValue.loading()) {
+  EmotionStateNotifier(this._repository, List<String> initialSources)
+      : _currentSources = initialSources,
+        super(const AsyncValue.loading()) {
     _initialize();
   }
 
   Future<void> _initialize() async {
-    // Try WebSocket first, fall back to polling
-    try {
-      await _connectWebSocket();
-    } catch (e) {
-      _startPolling();
-    }
-  }
-
-  Future<void> _connectWebSocket() async {
-    _subscription = _repository.streamSentiment().listen(
-      (emotion) {
-        state = AsyncValue.data(emotion);
-      },
-      onError: (error) {
-        // Fall back to polling on WebSocket error
-        _startPolling();
-      },
-    );
+    // Use polling to support source filtering
+    // (WebSocket doesn't support source filtering)
+    _startPolling();
   }
 
   void _startPolling() {
     _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+    // Initial fetch immediately
+    refresh();
+    // Then poll every 30 seconds
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
       await refresh();
     });
-    // Initial fetch
-    refresh();
+  }
+
+  /// Update the sources filter and refresh.
+  Future<void> updateSources(Set<String> sources) async {
+    _currentSources = sources.toList();
+    await refresh();
   }
 
   Future<void> refresh() async {
     try {
-      final emotion = await _repository.getCurrentSentiment();
+      final emotion = await _repository.getCurrentSentiment(sources: _currentSources);
       state = AsyncValue.data(emotion);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -132,9 +194,20 @@ class SentimentRepository {
   SentimentRepository(this._client);
 
   /// Fetches the current aggregated sentiment.
-  Future<EmotionState> getCurrentSentiment() async {
-    final response = await _client.get('/api/v1/sentiment/current');
+  /// Optionally filter by specific sources.
+  Future<EmotionState> getCurrentSentiment({List<String>? sources}) async {
+    final queryParams = <String, String>{};
+    if (sources != null && sources.isNotEmpty) {
+      queryParams['sources'] = sources.join(',');
+    }
+    final response = await _client.get('/api/v1/sentiment/current', queryParams: queryParams.isNotEmpty ? queryParams : null);
     return EmotionState.fromJson(response);
+  }
+
+  /// Fetches available sources from the backend.
+  Future<List<String>> getAvailableSources() async {
+    final response = await _client.get('/api/v1/sentiment/available-sources');
+    return List<String>.from(response['sources'] as List);
   }
 
   /// Fetches historical sentiment data with topics.
@@ -191,12 +264,46 @@ class SentimentRepository {
     );
   }
 
-  /// Fetches sentiment breakdown by source.
+  /// Fetches sentiment breakdown by source (legacy - returns just emotions).
   Future<Map<String, EmotionState>> getBySource() async {
     final response = await _client.get('/api/v1/sentiment/sources');
-    return (response['sources'] as Map<String, dynamic>).map(
-      (key, value) => MapEntry(key, EmotionState.fromJson(value as Map<String, dynamic>)),
+    final sources = response['sources'] as Map<String, dynamic>;
+    return sources.map((key, value) {
+      final sourceData = value as Map<String, dynamic>;
+      final emotionData = sourceData['emotion'] as Map<String, dynamic>;
+      return MapEntry(key, EmotionState.fromJson(emotionData));
+    });
+  }
+
+  /// Fetches per-source emotions with topics (new API).
+  Future<List<SourceEmotionState>> getSourceEmotions({List<String>? sources}) async {
+    final queryParams = <String, String>{};
+    if (sources != null && sources.isNotEmpty) {
+      queryParams['sources'] = sources.join(',');
+    }
+
+    final response = await _client.get(
+      '/api/v1/sentiment/sources',
+      queryParams: queryParams.isNotEmpty ? queryParams : null,
     );
+
+    final sourcesData = response['sources'] as Map<String, dynamic>;
+    return sourcesData.entries.map((entry) {
+      final data = entry.value as Map<String, dynamic>;
+      // Map the nested emotion data
+      final emotionData = data['emotion'] as Map<String, dynamic>;
+      return SourceEmotionState(
+        source: entry.key,
+        emotion: EmotionState.fromJson(emotionData),
+        topTopic: data['top_topic'] as String? ?? '',
+        topicSentiment: (data['topic_sentiment'] as num?)?.toDouble() ?? 0.0,
+        sampleTitles: List<String>.from(data['sample_titles'] as List? ?? []),
+        postCount: (data['post_count'] as num?)?.toInt() ?? 0,
+        lastUpdated: data['last_updated'] != null
+            ? DateTime.tryParse(data['last_updated'] as String)
+            : null,
+      );
+    }).toList();
   }
 
   /// Streams real-time sentiment updates via WebSocket.

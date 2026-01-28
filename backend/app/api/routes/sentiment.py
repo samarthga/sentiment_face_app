@@ -77,10 +77,41 @@ async def broadcast_emotion(emotion: EmotionState):
         connected_clients.remove(client)
 
 
+@router.get("/available-sources")
+async def get_available_sources():
+    """Get list of available data sources."""
+    aggregator = EmotionAggregator()
+    sources = aggregator.get_available_sources()
+    return {
+        "sources": sources,
+        "count": len(sources),
+    }
+
+
 @router.get("/current", response_model=EmotionState)
-async def get_current_sentiment():
-    """Get the current aggregated emotion state."""
-    return get_current_emotion()
+async def get_current_sentiment(
+    sources: Optional[str] = Query(
+        None,
+        description="Comma-separated list of sources to include (e.g., 'reddit,bluesky')"
+    )
+):
+    """Get the current aggregated emotion state.
+
+    Optionally filter by specific sources.
+    """
+    # If no sources specified, return cached emotion
+    if not sources:
+        return get_current_emotion()
+
+    # Parse sources and fetch filtered data
+    source_list = [s.strip().lower() for s in sources.split(",") if s.strip()]
+    if not source_list:
+        return get_current_emotion()
+
+    # For filtered requests, we need to re-aggregate with selected sources
+    aggregator = EmotionAggregator()
+    emotion = await aggregator.aggregate_all(sources=source_list)
+    return emotion
 
 
 @router.get("/history")
@@ -139,40 +170,36 @@ async def get_current_sentiment_detailed():
 
 
 @router.get("/sources")
-async def get_sentiment_by_source():
-    """Get sentiment breakdown by source."""
+async def get_sentiment_by_source(
+    sources: Optional[str] = Query(None, description="Comma-separated list of sources to include")
+):
+    """Get real sentiment breakdown by source with topics.
+
+    Each source returns:
+    - source: The source name
+    - emotion: The EmotionState for that source
+    - top_topic: The keyword/topic driving the emotion
+    - topic_sentiment: Sentiment score for the topic
+    - sample_titles: Sample headlines from the source
+    - post_count: Number of posts analyzed
+    """
+    aggregator = EmotionAggregator()
+
+    # Parse sources filter
+    source_list = None
+    if sources:
+        source_list = [s.strip().lower() for s in sources.split(",") if s.strip()]
+
+    # Get real per-source emotions with topics
+    per_source = await aggregator.aggregate_per_source(sources=source_list)
+
+    # Get aggregate for comparison
     current = get_current_emotion()
 
-    # Generate per-source states (mock data for now)
-    sources = {
-        "reddit": EmotionState(
-            happiness=0.35,
-            sadness=0.15,
-            anger=0.2,
-            overall_sentiment=0.15,
-            timestamp=datetime.utcnow(),
-        ),
-        "hackernews": EmotionState(
-            happiness=0.25,
-            sadness=0.1,
-            anger=0.1,
-            surprise=0.3,
-            overall_sentiment=0.25,
-            timestamp=datetime.utcnow(),
-        ),
-        "rss": EmotionState(
-            happiness=0.3,
-            sadness=0.2,
-            anger=0.15,
-            fear=0.1,
-            overall_sentiment=0.1,
-            timestamp=datetime.utcnow(),
-        ),
-    }
-
     return {
-        "sources": {k: v.model_dump(by_alias=True) for k, v in sources.items()},
+        "sources": {k: v.model_dump(by_alias=True) for k, v in per_source.items()},
         "aggregate": current.model_dump(by_alias=True),
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -200,10 +227,23 @@ async def sentiment_stream(websocket: WebSocket):
 
 
 @router.post("/refresh")
-async def refresh_sentiment():
-    """Manually trigger sentiment aggregation."""
+async def refresh_sentiment(
+    sources: Optional[str] = Query(
+        None,
+        description="Comma-separated list of sources to include (e.g., 'reddit,bluesky')"
+    )
+):
+    """Manually trigger sentiment aggregation.
+
+    Optionally filter by specific sources.
+    """
     aggregator = EmotionAggregator()
-    emotion = await aggregator.aggregate_all()
+
+    source_list = None
+    if sources:
+        source_list = [s.strip().lower() for s in sources.split(",") if s.strip()]
+
+    emotion = await aggregator.aggregate_all(sources=source_list)
     update_current_emotion(emotion)
     return {"status": "refreshed", "emotion": emotion.model_dump(by_alias=True)}
 

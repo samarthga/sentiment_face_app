@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../domain/emotion_state.dart';
 import '../../domain/emotion_prompt_builder.dart';
 import '../../../../core/services/gemini_service.dart';
 import '../../../../core/config/api_config.dart';
+import '../../../../core/theme/emotion_colors.dart';
 
 /// Provider for Gemini service.
 final geminiServiceProvider = Provider<GeminiService>((ref) {
@@ -98,30 +100,56 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
   @override
   Widget build(BuildContext context) {
     final imageAsync = ref.watch(faceImageProvider(widget.emotion));
+    final emotionColor = EmotionColors.getColor(widget.emotion.dominantEmotion);
 
-    return Container(
-      color: Colors.grey.shade900,
-      child: imageAsync.when(
-        data: (imageData) {
-          if (imageData != null) {
-            return _buildFaceImage(imageData);
-          }
-          return _buildFallbackFace();
-        },
-        loading: () => _buildLoadingState(),
-        error: (e, _) => _buildFallbackFace(error: e.toString()),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade900,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: emotionColor.withValues(alpha: 0.25),
+              blurRadius: 40,
+              spreadRadius: 2,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: imageAsync.when(
+          data: (imageData) {
+            if (imageData != null) {
+              return _buildFaceImage(imageData);
+            }
+            return _buildFallbackFace();
+          },
+          loading: () => _buildLoadingState(),
+          error: (e, _) => _buildFallbackFace(error: e.toString()),
+        ),
       ),
     );
   }
 
   Widget _buildFaceImage(Uint8List imageData) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
-      child: SizedBox.expand(
+      duration: const Duration(milliseconds: 800),
+      switchInCurve: Curves.easeInOut,
+      switchOutCurve: Curves.easeInOut,
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+      child: ClipRRect(
         key: ValueKey(imageData.hashCode),
+        borderRadius: BorderRadius.circular(24),
         child: Image.memory(
           imageData,
           fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
           gaplessPlayback: true,
         ),
       ),
@@ -129,85 +157,61 @@ class _RealisticFaceWidgetState extends ConsumerState<RealisticFaceWidget>
   }
 
   Widget _buildLoadingState() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Animated gradient background
-        AnimatedBuilder(
-          animation: _pulseController,
-          builder: (context, child) {
-            return Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 0.8 + (_pulseController.value * 0.2),
-                  colors: [
-                    _getEmotionColor(widget.emotion.dominantEmotion).withOpacity(0.3),
-                    Colors.grey.shade800,
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+    final emotionColor = EmotionColors.getColor(widget.emotion.dominantEmotion);
 
-        // Face silhouette placeholder
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Pulsing face icon
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: 1.0 + (_pulseController.value * 0.1),
-                    child: Icon(
-                      Icons.face,
-                      size: 120,
-                      color: Colors.white.withOpacity(0.3 + (_pulseController.value * 0.2)),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Generating face...',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: 200,
-                child: LinearProgressIndicator(
-                  backgroundColor: Colors.white24,
-                  valueColor: AlwaysStoppedAnimation(
-                    _getEmotionColor(widget.emotion.dominantEmotion),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black38,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Emotion: ${widget.emotion.dominantEmotion.toUpperCase()}',
-                  style: TextStyle(
-                    color: _getEmotionColor(widget.emotion.dominantEmotion),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: RadialGradient(
+              center: Alignment.center,
+              radius: 0.9 + (_pulseController.value * 0.15),
+              colors: [
+                emotionColor.withValues(alpha: 0.15),
+                Colors.grey.shade900,
+              ],
+            ),
           ),
-        ),
-      ],
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Transform.scale(
+                  scale: 1.0 + (_pulseController.value * 0.05),
+                  child: Icon(
+                    Icons.face,
+                    size: 72,
+                    color: emotionColor.withValues(alpha: 0.4 + (_pulseController.value * 0.15)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: 140,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      backgroundColor: Colors.white10,
+                      valueColor: AlwaysStoppedAnimation(emotionColor.withValues(alpha: 0.6)),
+                      minHeight: 3,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Generating...',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -259,9 +259,10 @@ Style: Professional portrait photography, 85mm lens, shallow depth of field, cat
     }
 
     return '''
-Hyper-realistic portrait photograph of a person with a $emotionWord expression.
-Close-up face, studio lighting, gray background, photorealistic, 85mm lens.
-Natural skin, detailed eyes, authentic emotion, looking at camera.
+Candid, natural-looking headshot of a real person with a $emotionWord expression.
+Looking directly at camera. Soft natural lighting, warm tones, slightly blurred background.
+Relaxed and authentic — like a casual photo, not posed or stiff.
+Photorealistic, high detail skin and eyes, shallow depth of field.
 ''';
   }
 }

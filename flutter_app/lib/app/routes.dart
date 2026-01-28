@@ -6,6 +6,27 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/history/history_screen.dart';
 
+/// Custom page transition for smooth navigation.
+CustomTransitionPage<void> _buildPageWithTransition({
+  required Widget child,
+  required GoRouterState state,
+}) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeInOut,
+        ),
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 300),
+  );
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
@@ -16,22 +37,34 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/',
             name: 'face',
-            builder: (context, state) => const FaceScreen(),
+            pageBuilder: (context, state) => _buildPageWithTransition(
+              child: const FaceScreen(),
+              state: state,
+            ),
           ),
           GoRoute(
             path: '/dashboard',
             name: 'dashboard',
-            builder: (context, state) => const DashboardScreen(),
+            pageBuilder: (context, state) => _buildPageWithTransition(
+              child: const DashboardScreen(),
+              state: state,
+            ),
           ),
           GoRoute(
             path: '/history',
             name: 'history',
-            builder: (context, state) => const HistoryScreen(),
+            pageBuilder: (context, state) => _buildPageWithTransition(
+              child: const HistoryScreen(),
+              state: state,
+            ),
           ),
           GoRoute(
             path: '/settings',
             name: 'settings',
-            builder: (context, state) => const SettingsScreen(),
+            pageBuilder: (context, state) => _buildPageWithTransition(
+              child: const SettingsScreen(),
+              state: state,
+            ),
           ),
         ],
       ),

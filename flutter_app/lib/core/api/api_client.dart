@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Provides the API client singleton.
@@ -17,6 +17,15 @@ class ApiClient {
     defaultValue: '',
   );
 
+  /// Get the appropriate host for the current platform.
+  /// Android emulator uses 10.0.2.2 to reach host machine's localhost.
+  static String get _devHost {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return '10.0.2.2';
+    }
+    return 'localhost';
+  }
+
   static String get _baseUrl {
     // If production URL is set via environment, use it
     if (_prodApiUrl.isNotEmpty) {
@@ -26,8 +35,8 @@ class ApiClient {
     if (kIsWeb && kReleaseMode) {
       return '';  // Use relative URLs for same-origin backend
     }
-    // Development fallback
-    return 'http://localhost:8000';
+    // Development fallback - use appropriate host for platform
+    return 'http://$_devHost:8000';
   }
 
   static String get _wsBaseUrl {
@@ -38,7 +47,7 @@ class ApiClient {
     if (kIsWeb && kReleaseMode) {
       return '';  // Will be constructed from window.location in WebSocket code
     }
-    return 'ws://localhost:8000';
+    return 'ws://$_devHost:8000';
   }
 
   String get baseUrl => _baseUrl;

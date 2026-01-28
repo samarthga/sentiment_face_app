@@ -1,7 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../face/data/sentiment_repository.dart';
+import '../face/presentation/widgets/source_chips.dart';
+import '../../core/theme/emotion_colors.dart';
+import '../../shared/widgets/skeleton_loader.dart';
+import '../../shared/widgets/animated_emotion_bar.dart';
 
 /// Provider for emotion topics mapping.
 final emotionTopicsProvider = FutureProvider.autoDispose<Map<String, List<String>>>((ref) async {
@@ -107,10 +112,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch selectedSources to force rebuild when sources change
+    final selectedSources = ref.watch(selectedSourcesProvider);
     final emotionAsync = ref.watch(emotionStateProvider);
     final emotionTopicsAsync = ref.watch(emotionTopicsProvider);
     final searchQuery = ref.watch(globalSearchQueryProvider);
     final isSearching = searchQuery != null && searchQuery.isNotEmpty;
+
+    // Debug: print selected sources count
+    debugPrint('Dashboard: ${selectedSources.length} sources selected');
 
     // Watch global search results if searching
     final searchResultAsync = isSearching
@@ -156,7 +166,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: emotionAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const DashboardSkeleton(),
           error: (e, _) => Center(child: Text('Error: $e')),
           data: (defaultEmotion) {
             final emotionTopics = emotionTopicsAsync.valueOrNull ?? {};
@@ -205,6 +215,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             return ListView(
               children: [
+                // Source chips at the top
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Data Sources',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 36,
+                        child: SourceChips(emotion: defaultEmotion),
+                      ),
+                    ],
+                  ),
+                ),
+
                 // Search indicator
                 if (isSearching) ...[
                   _SearchIndicator(
@@ -223,6 +254,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ? Icons.sentiment_satisfied
                       : Icons.sentiment_dissatisfied,
                   color: overallSentiment > 0 ? Colors.green : Colors.red,
+                  index: 0,
                 ),
                 const SizedBox(height: 16),
                 _StatCard(
@@ -230,8 +262,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   value: dominantEmotion.toUpperCase(),
                   subtitle: '${(dominantIntensity * 100).toStringAsFixed(0)}% intensity',
                   icon: Icons.psychology,
-                  color: Colors.purple,
+                  color: EmotionColors.getColor(dominantEmotion),
                   topics: isSearching ? [searchQuery] : emotionTopics[dominantEmotion.toLowerCase()],
+                  index: 1,
                 ),
                 const SizedBox(height: 16),
                 _StatCard(
@@ -240,6 +273,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   subtitle: 'How strongly emotions are being expressed',
                   icon: Icons.speed,
                   color: Colors.orange,
+                  index: 2,
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -262,31 +296,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   label: 'Happiness',
                   value: happiness,
                   topics: isSearching ? null : emotionTopics['happiness'],
+                  index: 0,
                 ),
                 _EmotionRow(
                   label: 'Sadness',
                   value: sadness,
                   topics: isSearching ? null : emotionTopics['sadness'],
+                  index: 1,
                 ),
                 _EmotionRow(
                   label: 'Anger',
                   value: anger,
                   topics: isSearching ? null : emotionTopics['anger'],
+                  index: 2,
                 ),
                 _EmotionRow(
                   label: 'Fear',
                   value: fear,
                   topics: isSearching ? null : emotionTopics['fear'],
+                  index: 3,
                 ),
                 _EmotionRow(
                   label: 'Surprise',
                   value: surprise,
                   topics: isSearching ? null : emotionTopics['surprise'],
+                  index: 4,
                 ),
                 _EmotionRow(
                   label: 'Disgust',
                   value: disgust,
                   topics: isSearching ? null : emotionTopics['disgust'],
+                  index: 5,
                 ),
               ],
             );
@@ -390,6 +430,7 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final List<String>? topics;
+  final int index;
 
   const _StatCard({
     required this.title,
@@ -398,64 +439,121 @@ class _StatCard extends StatelessWidget {
     required this.icon,
     required this.color,
     this.topics,
+    this.index = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.15),
+              color.withOpacity(0.05),
+              Colors.transparent,
+            ],
+          ),
+        ),
+        child: Stack(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
+            // Subtle glow in corner
+            Positioned(
+              top: -20,
+              right: -20,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      color.withOpacity(0.3),
+                      color.withOpacity(0.0),
+                    ],
+                  ),
+                ),
               ),
-              child: Icon(icon, color: color, size: 32),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey,
-                    ),
-                  ),
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
-                    ),
-                  ),
-                  if (topics != null && topics!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '[${topics!.take(3).join(", ")}]',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: color,
-                        fontWeight: FontWeight.w500,
+                  // Icon with gradient background
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [color, color.withOpacity(0.7)],
                       ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: Icon(icon, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          value,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 12,
+                          ),
+                        ),
+                        if (topics != null && topics!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '[${topics!.take(3).join(", ")}]',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: color,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
         ),
       ),
-    );
+    ).animate(delay: Duration(milliseconds: 100 * index))
+        .fadeIn(duration: 400.ms, curve: Curves.easeOut)
+        .slideY(begin: 0.15, end: 0, duration: 400.ms, curve: Curves.easeOutCubic);
   }
 }
 
@@ -463,74 +561,22 @@ class _EmotionRow extends StatelessWidget {
   final String label;
   final double value;
   final List<String>? topics;
+  final int index;
 
   const _EmotionRow({
     required this.label,
     required this.value,
     this.topics,
+    this.index = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = _getEmotionColor(label);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 70,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
-          Expanded(
-            child: LinearProgressIndicator(
-              value: value,
-              backgroundColor: Colors.grey.shade300,
-              valueColor: AlwaysStoppedAnimation(color),
-              minHeight: 8,
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 35,
-            child: Text(
-              '${(value * 100).toStringAsFixed(0)}%',
-              style: const TextStyle(fontSize: 12),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getEmotionColor(String emotion) {
-    switch (emotion.toLowerCase()) {
-      case 'happiness':
-        return Colors.amber;
-      case 'sadness':
-        return Colors.blue;
-      case 'anger':
-        return Colors.red;
-      case 'fear':
-        return Colors.purple;
-      case 'surprise':
-        return Colors.orange;
-      case 'disgust':
-        return Colors.green;
-      case 'confusion':
-        return Colors.teal;
-      case 'pride':
-        return Colors.amber.shade700;
-      case 'loneliness':
-        return Colors.indigo;
-      case 'pain':
-        return Colors.deepOrange;
-      default:
-        return Colors.grey;
-    }
+    return AnimatedEmotionBar(
+      label: label,
+      value: value,
+    ).animate(delay: Duration(milliseconds: 50 * index))
+        .fadeIn(duration: 300.ms)
+        .slideX(begin: -0.05, end: 0, duration: 300.ms);
   }
 }

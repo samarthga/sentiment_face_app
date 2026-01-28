@@ -31,5 +31,8 @@ feedparser==6.0.11
 # WebSocket
 websockets==12.0
 
+# Truth Social
+truthbrush==0.2.3
+
 # Static file serving
 aiofiles==23.2.1

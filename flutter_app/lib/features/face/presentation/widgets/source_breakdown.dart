@@ -10,28 +10,14 @@ class SourceBreakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final emotions = _getTopEmotions();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Emotion Breakdown',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: Colors.grey,
-          ),
+    return Row(
+      children: emotions.map((e) => Expanded(
+        child: _EmotionBar(
+          label: e['label'] as String,
+          value: e['value'] as double,
+          color: e['color'] as Color,
         ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: Row(
-            children: emotions.map((e) => Expanded(
-              child: _EmotionBar(
-                label: e['label'] as String,
-                value: e['value'] as double,
-                color: e['color'] as Color,
-              ),
-            )).toList(),
-          ),
-        ),
-      ],
+      )).toList(),
     );
   }
 
@@ -62,42 +48,39 @@ class _EmotionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade800,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.bottomCenter,
-                heightFactor: value.clamp(0.05, 1.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(8),
+    return Tooltip(
+      message: '$label: ${(value * 100).toInt()}%',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.bottomCenter,
+                  heightFactor: value.clamp(0.05, 1.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            '${(value * 100).toInt()}%',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.grey,
+            const SizedBox(height: 2),
+            Text(
+              label.substring(0, 1),
+              style: const TextStyle(fontSize: 9, color: Colors.grey),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
